@@ -11,6 +11,7 @@ Session = sessionmaker(bind=engine)
 class UserConfig(Base):
      __tablename__ = 'user_config'
      id = Column(Integer, primary_key=True)
+     config_name = Column(String, default='default_config')
      min_size_kb = Column(Integer, default=100)
      max_size_kb = Column(Integer, default=2048)
      valid_extensions = Column(String, default='.jpg,.jpeg,.png')
@@ -30,11 +31,12 @@ def initialize_database():
      except Exception as e:
           print(f"[!] Error initializing database: {e}")
          
-def add_user_config(min_size_kb: int = 100, max_size_kb: int = 2048,
+def add_user_config(config_name: str = "default_config", min_size_kb: int = 100, max_size_kb: int = 2048,
                  valid_extensions: str = '.jpg,.jpeg,.png', base_dir: str = './'):
      session = Session()
      try:
           config = UserConfig(
+               config_name=config_name,
                min_size_kb=min_size_kb,
                max_size_kb=max_size_kb,
                valid_extensions=valid_extensions,
