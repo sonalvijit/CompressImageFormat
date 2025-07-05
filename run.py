@@ -58,6 +58,7 @@ MIN_SIZE_KB = 100
 MAX_SIZE_KB = 2048
 VALID_EXTENSIONS = ('.jpg', '.jpeg', '.png')
 BASE_DIR: str = "./"
+TARGET_FILES: str = "*"
 
 def save_user_config():
      pass
@@ -92,13 +93,14 @@ def read_config(file_path:str="./preconfig.json"):
           return None
 
 def parse_config(config: dict):
-     global DISABLE_TERMINAL_INPUT, MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS, BASE_DIR
+     global DISABLE_TERMINAL_INPUT, MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS, BASE_DIR, TARGET_FILES
      DISABLE_TERMINAL_INPUT = config.get("DISABLE_TERMINAL_INPUT", DISABLE_TERMINAL_INPUT)
      MIN_SIZE_KB = config.get("MIN_SIZE_KB", MIN_SIZE_KB)
      MAX_SIZE_KB = config.get("MAX_SIZE_KB", MAX_SIZE_KB)
      VALID_EXTENSIONS = tuple(config.get("VALID_EXTENSIONS", VALID_EXTENSIONS))
      BASE_DIR = config.get("BASE_DIR", BASE_DIR)
-     return [DISABLE_TERMINAL_INPUT, MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS, BASE_DIR]
+     TARGET_FILES = config.get("TARGET_FILES", TARGET_FILES)
+     return [DISABLE_TERMINAL_INPUT, MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS, BASE_DIR, TARGET_FILES]
 
 def is_valid_image_format(file_path: str) -> bool:
      return file_path.lower().endswith(VALID_EXTENSIONS)
@@ -108,36 +110,47 @@ def compress_image(file_path: str, output_path: str, quality: int = 85) -> None:
      img = img.convert("RGB")
      img.save(output_path, format='JPEG', quality=quality)
 
-def process_image(BASE_DIR:str, input_path: str) -> None:
-     input_path = os.path.join(BASE_DIR, input_path)
-     if not is_valid_image_format(input_path):
-          print(f"Error: The file {input_path} is not a valid image format.")
-          return
-     
-     sanitized_name = sanitize_filename(os.path.basename(input_path))
-     sanitized_path = os.path.join(os.path.dirname(input_path), sanitized_name)
-     os.rename(input_path, sanitized_path)
+def process_image(BASE_DIR: str, input_path: str, TARGET_FILES: str) -> None:
+    if TARGET_FILES == "*":
+        # Enumerate all files in the BASE_DIR
+        for file in os.listdir(BASE_DIR):
+            full_path = os.path.join(BASE_DIR, file)
+            if os.path.isfile(full_path) and is_valid_image_format(full_path):
+                process_image(BASE_DIR, file, TARGET_FILES="single")
+        return  # Done with all files
 
-     size_kb = get_file_size_kb(sanitized_path)
-     print(f"Initial Size: {size_kb:.2f} KB")
+    # Now, actual processing for a single file
+    input_path = os.path.join(BASE_DIR, input_path)
+    if not is_valid_image_format(input_path):
+        print(f"Error: The file {input_path} is not a valid image format.")
+        return
 
-     if MIN_SIZE_KB <= size_kb <= MAX_SIZE_KB:
-          print(f"File {sanitized_name} is within the size limits.")
-          return
-     
-     for quality in range(95, 10, -5):
-          name, _ = os.path.splitext(sanitized_path)
-          compressed_path = f"{name}_compressed.jpg"
+    sanitized_name = sanitize_filename(os.path.basename(input_path))
+    sanitized_path = os.path.join(os.path.dirname(input_path), sanitized_name)
+    os.rename(input_path, sanitized_path)
 
-          compress_image(sanitized_path, compressed_path, quality)
-          compressed_size_kb = get_file_size_kb(compressed_path)
-          print(f"Trying quality {quality}: {compressed_size_kb:.2f} KB")
+    size_kb = get_file_size_kb(sanitized_path)
+    print(f"Initial Size: {size_kb:.2f} KB")
 
-          if MIN_SIZE_KB <= compressed_size_kb <= MAX_SIZE_KB:
-               print(f"Compressed {sanitized_name} to {compressed_size_kb:.2f} KB at quality {quality}.")
-               return
-          os.remove(compressed_path)
-     print(f"Error: Unable to compress {sanitized_name} to a valid size.")
+    if MIN_SIZE_KB <= size_kb <= MAX_SIZE_KB:
+        print(f"File {sanitized_name} is within the size limits.")
+        return
+
+    for quality in range(95, 10, -5):
+        name, _ = os.path.splitext(sanitized_path)
+        compressed_path = f"{name}_compressed.jpg"
+
+        compress_image(sanitized_path, compressed_path, quality)
+        compressed_size_kb = get_file_size_kb(compressed_path)
+     #    print(f"Trying quality {quality}: {compressed_size_kb:.2f} KB")
+
+        if MIN_SIZE_KB <= compressed_size_kb <= MAX_SIZE_KB:
+            print(f"✅ Compressed {sanitized_name} to {compressed_size_kb:.2f} KB at quality {quality}.")
+            return
+        os.remove(compressed_path)
+
+    print(f"❌ Error: Unable to compress {sanitized_name} to a valid size.")
+
 
 def stimulate_terminal_interface():
      print("Input these field: \n\033[35mMIN_SIZE_KB\033[0m \n\033[35mMAX_SIZE_KB\033[0m \n\033[35mBASE_DIR\033[0m")
@@ -153,5 +166,5 @@ def stimulate_terminal_interface():
                break
 
 if __name__ == "__main__":
-     DISABLE_TERMINAL_INPUT, MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS, BASE_DIR = try_importing_config_file()
-     process_image(BASE_DIR, "example.jpg")
+     DISABLE_TERMINAL_INPUT, MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS, BASE_DIR, TARGET_FILES = try_importing_config_file()
+     process_image(BASE_DIR, "example.jpg", TARGET_FILES)
