@@ -12,8 +12,8 @@ def try_importing_config_file():
      a = read_config()
      if a is None:
           print("No config file found, using default settings.")
-     else:
-          print("Config file loaded successfully.")
+          return
+     return parse_config(a)
 
 def sanitize_filename(filename: str) -> str:
      name, ext = os.path.splitext(filename)
@@ -36,7 +36,14 @@ def read_config(file_path:str="./preconfig.json"):
      except json.JSONDecodeError:
           print(f"Error: The file {file_path} is not a valid JSON.")
           return None
-     
+
+def parse_config(config: dict):
+     global MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS
+     MIN_SIZE_KB = config.get("MIN_SIZE_KB", MIN_SIZE_KB)
+     MAX_SIZE_KB = config.get("MAX_SIZE_KB", MAX_SIZE_KB)
+     VALID_EXTENSIONS = tuple(config.get("VALID_EXTENSIONS", VALID_EXTENSIONS))
+     return [MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS]
+
 def is_valid_image_format(file_path: str) -> bool:
      return file_path.lower().endswith(VALID_EXTENSIONS)
 
@@ -76,4 +83,5 @@ def process_image(input_path: str) -> None:
 
 
 if __name__ == "__main__":
-     try_importing_config_file()
+     s_ = try_importing_config_file()
+     print(s_)
