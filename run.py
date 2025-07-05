@@ -54,7 +54,6 @@ def compress_image(file_path: str, output_path: str, quality: int = 85) -> None:
      img = img.convert("RGB")  # Convert to RGB if not already
      img.save(output_path, format='JPEG', quality=quality)
 
-
 def process_image(input_path: str) -> None:
      input_path = os.path.join(BASE_DIR, input_path)
      if not is_valid_image_format(input_path):
@@ -84,12 +83,23 @@ def process_image(input_path: str) -> None:
                print(f"Compressed {sanitized_name} to {compressed_size_kb:.2f} KB at quality {quality}.")
                return
           os.remove(compressed_path)
-
      print(f"Error: Unable to compress {sanitized_name} to a valid size.")
 
-
+def stimulate_terminal_interface():
+     print("Input these field: \n\033[35mMIN_SIZE_KB\033[0m \n\033[35mMAX_SIZE_KB\033[0m \n\033[35mBASE_DIR\033[0m")
+     while True:
+          try:
+               in_ = input(">>> ")
+               print(in_)
+               if in_.strip().lower() == 'exit' or in_.strip().lower() == 'quit':
+                    print("Exiting terminal interface. Existing gracefully...")
+                    break
+          except KeyboardInterrupt:
+               print("\nExiting terminal interface. Existing gracefully...")
+               break
 
 if __name__ == "__main__":
+     stimulate_terminal_interface()
      s_ = try_importing_config_file()
      print(s_)
-     process_image("example.jpg")  # Replace with your image file name
+     process_image("example.jpg")
