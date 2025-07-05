@@ -53,6 +53,7 @@ def add_user_config(config_name: str = "default_config", min_size_kb: int = 100,
 
 # Default Values
 
+DISABLE_TERMINAL_INPUT = False
 MIN_SIZE_KB = 100
 MAX_SIZE_KB = 2048
 VALID_EXTENSIONS = ('.jpg', '.jpeg', '.png')
@@ -91,22 +92,23 @@ def read_config(file_path:str="./preconfig.json"):
           return None
 
 def parse_config(config: dict):
-     global MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS, BASE_DIR
+     global DISABLE_TERMINAL_INPUT, MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS, BASE_DIR
+     DISABLE_TERMINAL_INPUT = config.get("DISABLE_TERMINAL_INPUT", DISABLE_TERMINAL_INPUT)
      MIN_SIZE_KB = config.get("MIN_SIZE_KB", MIN_SIZE_KB)
      MAX_SIZE_KB = config.get("MAX_SIZE_KB", MAX_SIZE_KB)
      VALID_EXTENSIONS = tuple(config.get("VALID_EXTENSIONS", VALID_EXTENSIONS))
      BASE_DIR = config.get("BASE_DIR", BASE_DIR)
-     return [MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS, BASE_DIR]
+     return [DISABLE_TERMINAL_INPUT, MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS, BASE_DIR]
 
 def is_valid_image_format(file_path: str) -> bool:
      return file_path.lower().endswith(VALID_EXTENSIONS)
 
 def compress_image(file_path: str, output_path: str, quality: int = 85) -> None:
      img = Image.open(file_path)
-     img = img.convert("RGB")  # Convert to RGB if not already
+     img = img.convert("RGB")
      img.save(output_path, format='JPEG', quality=quality)
 
-def process_image(input_path: str) -> None:
+def process_image(BASE_DIR:str, input_path: str) -> None:
      input_path = os.path.join(BASE_DIR, input_path)
      if not is_valid_image_format(input_path):
           print(f"Error: The file {input_path} is not a valid image format.")
@@ -151,18 +153,5 @@ def stimulate_terminal_interface():
                break
 
 if __name__ == "__main__":
-     # stimulate_terminal_interface()
-     # s_ = try_importing_config_file()
-     # print(s_)
-     # process_image("example.jpg")
-
-     initialize_database()
-     a = input("Do you want to add a user config? (yes/no): ").strip().lower()
-     if a == 'yes':
-          min_size = int(input("Enter minimum size in KB: "))
-          max_size = int(input("Enter maximum size in KB: "))
-          valid_ext = input("Enter valid extensions (comma separated): ")
-          base_dir = input("Enter base directory: ")
-          add_user_config(min_size, max_size, valid_ext, base_dir)
-     else:
-          print("No user config added.")
+     DISABLE_TERMINAL_INPUT, MIN_SIZE_KB, MAX_SIZE_KB, VALID_EXTENSIONS, BASE_DIR = try_importing_config_file()
+     process_image(BASE_DIR, "example.jpg")
