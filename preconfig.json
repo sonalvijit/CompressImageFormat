@@ -1,0 +1,6 @@
+{
+     "MIN_SIZE_KB": 200,
+     "MAX_SIZE_KB": 1200,
+     "VALID_EXTENSIONS": [".jpg", ".jpeg", ".png"," .gif", ".bmp", ".tiff"],
+     "BASE_DIR":"./example_images"
+}
