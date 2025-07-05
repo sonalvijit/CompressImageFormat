@@ -1,0 +1,6 @@
+{
+     "python.analysis.typeCheckingMode": "off",
+     "github.copilot.advanced": {
+          "useLanguageServer": false
+     }
+}
