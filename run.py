@@ -1,6 +1,53 @@
 import re
 import os
 from PIL import Image
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.orm import declarative_base, sessionmaker
+
+engine = create_engine('sqlite:///images.db')
+Base = declarative_base()
+Session = sessionmaker(bind=engine)
+
+class UserConfig(Base):
+     __tablename__ = 'user_config'
+     id = Column(Integer, primary_key=True)
+     min_size_kb = Column(Integer, default=100)
+     max_size_kb = Column(Integer, default=2048)
+     valid_extensions = Column(String, default='.jpg,.jpeg,.png')
+     base_dir = Column(String, default='./')
+
+     def __repr__(self):
+          return (f"<UserConfig(min_size_kb={self.min_size_kb}, "
+                  f"max_size_kb={self.max_size_kb}, "
+                  f"valid_extensions='{self.valid_extensions}', "
+                  f"base_dir='{self.base_dir}')>")
+     
+def initialize_database():
+     """Initialize the database and create tables."""
+     try:
+          Base.metadata.create_all(engine)
+          print("[+] Database initialized successfully.")
+     except Exception as e:
+          print(f"[!] Error initializing database: {e}")
+         
+def add_user_config(min_size_kb: int = 100, max_size_kb: int = 2048,
+                 valid_extensions: str = '.jpg,.jpeg,.png', base_dir: str = './'):
+     session = Session()
+     try:
+          config = UserConfig(
+               min_size_kb=min_size_kb,
+               max_size_kb=max_size_kb,
+               valid_extensions=valid_extensions,
+               base_dir=base_dir
+          )
+          session.add(config)
+          session.commit()
+          print(f"[+] UserConfig added: {config}")
+     except Exception as e:
+          session.rollback()
+          print(f"[!] Error adding UserConfig: {e}")
+     finally:
+          session.close()
 
 # Default Values
 
@@ -8,6 +55,9 @@ MIN_SIZE_KB = 100
 MAX_SIZE_KB = 2048
 VALID_EXTENSIONS = ('.jpg', '.jpeg', '.png')
 BASE_DIR: str = "./"
+
+def save_user_config():
+     pass
 
 def try_importing_config_file():
      a = read_config()
@@ -99,7 +149,18 @@ def stimulate_terminal_interface():
                break
 
 if __name__ == "__main__":
-     stimulate_terminal_interface()
-     s_ = try_importing_config_file()
-     print(s_)
-     process_image("example.jpg")
+     # stimulate_terminal_interface()
+     # s_ = try_importing_config_file()
+     # print(s_)
+     # process_image("example.jpg")
+
+     initialize_database()
+     a = input("Do you want to add a user config? (yes/no): ").strip().lower()
+     if a == 'yes':
+          min_size = int(input("Enter minimum size in KB: "))
+          max_size = int(input("Enter maximum size in KB: "))
+          valid_ext = input("Enter valid extensions (comma separated): ")
+          base_dir = input("Enter base directory: ")
+          add_user_config(min_size, max_size, valid_ext, base_dir)
+     else:
+          print("No user config added.")
